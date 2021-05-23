@@ -15,11 +15,10 @@ namespace SearchForFakesVK
 
             FakeSearcher Searcher;
             string Token = GetVKToken();
-
             if (Token != String.Empty)
             {
                 Searcher = new FakeSearcher(Token);
-                Log.PrintLine("Токен найден.");
+                Log.PrintLine("Токен успешно найден!");
             }
             else
             {
@@ -28,16 +27,15 @@ namespace SearchForFakesVK
                 return;
             }
 
-
-
             Console.ReadKey();
         }
 
-    static string GetVKToken()
-    {
-        if (File.Exists("VK_TOKEN.txt"))
-            return File.ReadAllText("VK_TOKEN.txt").Trim();
-        else return "";
+        static string GetVKToken()
+        {
+            if (File.Exists("VK_TOKEN.txt"))
+                return File.ReadAllText("VK_TOKEN.txt").Trim();
+            else return "";
+        }
     }
 }
-}
+
