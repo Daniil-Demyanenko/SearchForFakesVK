@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace lab9_dem_CS
+namespace Colors
 {
     public class Color
     {
