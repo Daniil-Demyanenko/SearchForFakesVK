@@ -2,7 +2,6 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Collections.Generic;
 
 //https://vkhost.github.io/
@@ -13,7 +12,10 @@ namespace SFFVK_lib
     {
         static readonly HttpClient client = new HttpClient();
         private string TOKEN;
-        private const string CLIENT_ID = "6121396";
+
+        public delegate void Logger(string log);
+        public Logger Log;
+        public bool NeedLog = false;
 
         /// <summary>
         /// Кол-во групп у исследуемого пользователя
@@ -44,12 +46,16 @@ namespace SFFVK_lib
             int count = (int)JsonSerializer.Deserialize<GroupsGetByIdResponse>(GetById).response[0].members_count;
             List<int> Result = new List<int>();
 
+            if (NeedLog) Log($"Кол-во участников в группе id{Group_id}: {count}.");
+
             //Составляем список участников группы
             for (int i = 0; i < count; i += 1000)
             {
                 string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.getMembers?group_id={Group_id}&offset={i}&v=5.131&access_token={TOKEN}");
                 var response = JsonSerializer.Deserialize<GroupResponse>(Json).response;
                 Result.AddRange(response.items);
+
+                if (NeedLog && i % 10000 == 0) Log($"Получено {Result.Count} участников группы.");
             }
 
             return Result;
@@ -66,13 +72,19 @@ namespace SFFVK_lib
             GroupResponse UserGroup = GetUserGroups(User_id).Result;
             UserGroupCount = UserGroup.response.count; //Установим кол-во групп
 
+            if (NeedLog) Log($"Найдено {UserGroupCount} групп.");
+
+            int c = 1;
             foreach (int i in UserGroup.response.items)
             {
+                if (NeedLog) Log($"Анализируется группа № {c}/{UserGroupCount}.");
+
                 List<int> id = GetGroupMembers(i).Result;
                 foreach (var j in id)
                     CountUser(ref result, j);
             }
 
+            if (NeedLog) Log($"Сортировка страниц по убыванию вероятности.");
             result.Sort((a, b) =>
             {
                 if (a.count == b.count) return 0;

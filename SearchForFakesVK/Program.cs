@@ -14,11 +14,11 @@ namespace SearchForFakesVK
             Color Log = new Color(ConsoleColor.Blue);
             int User_id;
 
-            FakeSearcher Searcher;
+            FakeSearcher Searcher;         
             string Token = GetVKToken();
             if (Token != String.Empty)
             {
-                Searcher = new FakeSearcher(Token);
+                Searcher = new FakeSearcher(Token); //Создаём объект поисковика
                 Log.PrintLine("Токен успешно найден!");
             }
             else
@@ -35,10 +35,14 @@ namespace SearchForFakesVK
             {
                 User_id = int.Parse(Console.ReadLine());
             }
-            catch {
+            catch
+            {
                 Err.PrintLine("Введён неверный id");
                 return;
             }
+
+            Searcher.NeedLog = true;                //включаем лог
+            Searcher.Log = (a) => Log.PrintLine(a); //выводить будем в консоль
 
             Dialog.PrintLine("Страницы могут быть не найдены, если настройки приватности ииследуемой страницы запрещают просмотр групп.");
             Log.PrintLine("Начато сканирование. Это может занять несколько минут.");
@@ -46,12 +50,15 @@ namespace SearchForFakesVK
             var users = Searcher.InformativePredict(User_id);
 
             Dialog.PrintLine($"Всего у пользователя {Searcher.UserGroupCount} групп.");
-            Dialog.PrintLine("Кол-во совпавшах групп и id страниц (топ-20):");
+            Dialog.PrintLine("Кол-во совпавшах групп и id страниц:");
 
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < users.Count; i++)
             {
-                Dialog.PrintLine($"{users[i].count}\t{users[i].user_id}");
+                for (int j = i; j < i + 10 && j < users.Count; j++)
+                    Dialog.PrintLine($"{users[j].count}\t{users[j].user_id}");
+                Log.PrintLine("Нажмите Enter, чтоб вывести ещё 10 страниц...");
             }
+
             Log.PrintLine("\nНажмите любую клавишу для завершения...");
             Console.ReadKey();
         }
