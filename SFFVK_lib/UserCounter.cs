@@ -1,0 +1,20 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SFFVK_lib
+{
+    public class UserCounter
+    {
+        public int user_id;
+        public int count;
+
+        public UserCounter(int id)
+        {
+            user_id = id;
+            count = 1;
+        }
+    }
+}

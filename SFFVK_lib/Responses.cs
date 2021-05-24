@@ -1,24 +1,24 @@
 ﻿namespace SFFVK_lib
 {
     //сгенерировано средствами "студии"
-    public class GroupResponse
+    internal class GroupResponse
     {
         public Response response { get; set; }
     }
 
-    public class Response
+    internal class Response
     {
         public int count { get; set; }
         public int[] items { get; set; }
     }
 
 
-    public class GroupsGetByIdResponse
+    internal class GroupsGetByIdResponse
     {
         public Response2[] response { get; set; }
     }
 
-    public class Response2
+    internal class Response2
     {
         public int id { get; set; }
         public string name { get; set; }
