@@ -14,7 +14,7 @@ namespace SearchForFakesVK
             Color Log = new Color(ConsoleColor.Blue);
             int User_id;
 
-            FakeSearcher Searcher;         
+            FakeSearcher Searcher;
             string Token = GetVKToken();
             if (Token != String.Empty)
             {
@@ -29,17 +29,20 @@ namespace SearchForFakesVK
             }
 
             Dialog.Print("Введите id пользователя ВКонтакте, которого нужно исследовать на фейковые страницы.\n" +
-                "(только цифровой id)\n>>");
+                "(только цифровой id)\n>> ");
+            User_id = int.Parse(Console.ReadLine());
 
-            try
+            Dialog.Print("Использовать \"Быстрый поиск\" (игнорирует группы, в которых больше SearchLimit участников)?\n" +
+            "y/n >> ");
+            Searcher.FastSearch = Console.ReadLine().ToLower() == "y" ? true : false;
+
+            if(Searcher.FastSearch)
             {
-                User_id = int.Parse(Console.ReadLine());
+                Dialog.Print("Введите максимальное количество участников группы \n(будут игнорироваться группы с кол-вом участников выше этого числа).\n"+
+                "По умолчанию SearchLimit = 500000 \n>> ");
+                Searcher.SearchLimit = int.Parse(Console.ReadLine());
             }
-            catch
-            {
-                Err.PrintLine("Введён неверный id");
-                return;
-            }
+
 
             Searcher.NeedLog = true;                //включаем лог
             Searcher.Log = (a) => Log.PrintLine(a); //выводить будем в консоль
@@ -57,6 +60,7 @@ namespace SearchForFakesVK
                 for (int j = i; j < i + 10 && j < users.Count; j++)
                     Dialog.PrintLine($"{users[j].count}\t{users[j].user_id}");
                 Log.PrintLine("Нажмите Enter, чтоб вывести ещё 10 страниц...");
+                Console.ReadLine();
             }
 
             Log.PrintLine("\nНажмите любую клавишу для завершения...");
@@ -65,8 +69,9 @@ namespace SearchForFakesVK
 
         static string GetVKToken()
         {
-            if (File.Exists("VK_TOKEN.txt"))
-                return File.ReadAllText("VK_TOKEN.txt").Trim();
+            string path = AppDomain.CurrentDomain.BaseDirectory;
+            if (File.Exists(path+"/VK_TOKEN.txt"))
+                return File.ReadAllText(path+"/VK_TOKEN.txt").Trim();
             else return "";
         }
     }
