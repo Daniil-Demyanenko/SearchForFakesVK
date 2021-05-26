@@ -66,12 +66,17 @@ namespace SFFVK_lib
             //Составляем список участников группы
             for (int i = 0; i < count; i += 1000)
             {
-                string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.getMembers?group_id={Group_id}&offset={i}&v=5.131&access_token={TOKEN}");
-                var response = JsonSerializer.Deserialize<GroupResponse>(Json).response;
-                //TODO: Добавить проверку. items.lenght>0
-                             Result.AddRange(response.items);
+                try
+                {
+                    string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.getMembers?group_id={Group_id}&offset={i}&v=5.131&access_token={TOKEN}");
+                    var response = JsonSerializer.Deserialize<GroupResponse>(Json).response;
+                    if (response.items.Length > 0) Result.AddRange(response.items);
 
-                if (NeedLog && i % 25000 == 0) Log($"Получено {Result.Count} участников группы из {count}.");
+                    if (NeedLog && i % 25000 == 0) Log($"Получено {Result.Count} участников группы из {count}.");
+                }
+                catch {
+                    if (NeedLog) Log($"Ошибка получения данных пользователей группы!");
+                }
             }
 
             return Result;
