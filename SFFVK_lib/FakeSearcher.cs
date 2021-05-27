@@ -62,15 +62,13 @@ namespace SFFVK_lib
         /// </summary>
         private async Task<GroupResponse> GetUserGroups(int User_id)
         {
-            try
+            string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.get?user_id={User_id}&v=5.131&access_token={TOKEN}");
+            var result = JsonSerializer.Deserialize<GroupResponse>(Json);
+            if (result is not null) return result;
+            else
             {
-                string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.get?user_id={User_id}&v=5.131&access_token={TOKEN}");
-                return JsonSerializer.Deserialize<GroupResponse>(Json);
-            }
-            catch
-            {
-                if (NeedLog) Log($"Не удалось получить список групп пользователя. Возможно они закрыты настройками приватности");
-                throw new Exception("Не удалось получить список групп пользователя. Возможно они защищены настройками приватности");
+                if (NeedLog) Log($"!# Не удалось получить список групп пользователя. Возможно они закрыты настройками приватности.");
+                throw new Exception("Не удалось получить список групп пользователя");
             }
         }
 
@@ -125,7 +123,15 @@ namespace SFFVK_lib
         public List<UserCounter> InformativePredict(int User_id)
         {
             var UserStatistics = new Dictionary<int, int>();
-            GroupResponse UserGroup = GetUserGroups(User_id).Result;
+            GroupResponse UserGroup;
+
+            try { UserGroup = GetUserGroups(User_id).Result; }
+            catch
+            {
+                ShowVKLogErr(); 
+                return new List<UserCounter>();
+            }
+
             UserGroupCount = UserGroup.response.count; //Установим кол-во групп пользователя
             UserGroupAnalyzed = 0; // Сбросим счётчик проанализированных групп
 
@@ -148,10 +154,10 @@ namespace SFFVK_lib
                 foreach (var j in id)
                     CountUser(ref UserStatistics, j);
 
-                
+
             }
 
-            if (NeedLog) Log($"Найдено {UserStatistics.Count} страниц.\n"+
+            if (NeedLog) Log($"Найдено {UserStatistics.Count} страниц.\n" +
                 $"Проанализированно {UserGroupAnalyzed} групп." +
                 "\nСортировка страниц по убыванию вероятности и нормализация списка.");
 
@@ -203,12 +209,12 @@ namespace SFFVK_lib
         /// <summary>
         /// Ошибка 29 от ВК. Временный запрет некоторых запросов.
         /// </summary>
-        private void ShowVKLogErr() 
+        private void ShowVKLogErr()
         {
-            if (NeedLog) Log("\n#############################################\n"+
+            if (NeedLog) Log("\n#############################################\n" +
             "Видимо, превышен лимит запросов к ВК.\n" +
             "Данная ошибка работает как временный бан. Обычно ВК запрещает вызывать определенные методы на время от 4 до 48 часов. " +
-            "Ускорить время бана вы не сможете, а вот увеличить - сможете!\n"+
+            "Ускорить время бана вы не сможете, а вот увеличить - сможете!\n" +
             "Постарайтесь не пользоваться приложением 8-24 часов.");
         }
     }
