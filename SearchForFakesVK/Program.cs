@@ -54,14 +54,15 @@ namespace SearchForFakesVK
 
             var users = Searcher.InformativePredict(User_id);
 
-            Dialog.PrintLine($"Всего у пользователя {Searcher.UserGroupCount} групп.");
+            Dialog.PrintLine($"Всего у пользователя {Searcher.UserGroupCount} групп.\n"+
+                $"Из них проанализированно {Searcher.UserGroupAnalyzed}.");
             Dialog.PrintLine($"Кол-во совпавшах групп и id страниц: {users.Count}");
 
             for (int i = 0; i < users.Count; i+= 10)
             {
                 for (int j = i; j < i + 10 && j < users.Count; j++)
                     Dialog.PrintLine($"{users[j].count}\tid{users[j].user_id}");
-                Log.PrintLine("Нажмите Enter, чтоб вывести ещё 10 страниц...");
+                Log.PrintLine($"Нажмите Enter, чтоб вывести ещё 10 страниц из {users.Count - 10*i}...");
                 Console.ReadLine();
             }
 

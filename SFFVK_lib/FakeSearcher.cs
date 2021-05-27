@@ -14,7 +14,7 @@ namespace SFFVK_lib
         static readonly HttpClient client = new HttpClient();
         private string TOKEN;
 
-        private float dropout = 0.02f;
+        private float dropout = 0.05f;
         /// <summary>
         /// Исключает пользователей, у которых меньше DROPOUT (процентов) общих групп.
         /// Dropout принадлежит [0,1].
@@ -41,12 +41,16 @@ namespace SFFVK_lib
         /// <summary>
         /// При включенном FastSearch, устанавливает максимальное число участников группы
         /// </summary>
-        public int SearchLimit = 450000;
+        public int SearchLimit = 120000;
 
         /// <summary>
         /// Кол-во групп у исследуемого пользователя
         /// </summary>
         public int UserGroupCount { get; private set; }
+        /// <summary>
+        /// Кол-во групп пользователя, которые были проанализированны алгоритмом
+        /// </summary>
+        public int UserGroupAnalyzed { get; private set; } // TODO счётчик проанализированных групп
 
         public FakeSearcher(string VK_Token)
         {
@@ -58,8 +62,16 @@ namespace SFFVK_lib
         /// </summary>
         private async Task<GroupResponse> GetUserGroups(int User_id)
         {
-            string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.get?user_id={User_id}&v=5.131&access_token={TOKEN}");
-            return JsonSerializer.Deserialize<GroupResponse>(Json);
+            try
+            {
+                string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.get?user_id={User_id}&v=5.131&access_token={TOKEN}");
+                return JsonSerializer.Deserialize<GroupResponse>(Json);
+            }
+            catch
+            {
+                if (NeedLog) Log($"Не удалось получить список групп пользователя. Возможно они закрыты настройками приватности");
+                throw new Exception("Не удалось получить список групп пользователя. Возможно они защищены настройками приватности");
+            }
         }
 
         /// <summary>
@@ -79,6 +91,8 @@ namespace SFFVK_lib
                 if (NeedLog) Log($"Пропуск группы. Участников больше SearchLimit.");
                 return Result;
             }
+            else UserGroupAnalyzed++; // Инкрементируем счётчик проанализированных групп.
+
 
             //Составляем список участников группы
             for (int i = 0; i < count; i += 1000)
@@ -98,7 +112,7 @@ namespace SFFVK_lib
                 }
             }
 
-            if(NeedLog) Log($"Получены все {Result.Count} из {count} участников.");
+            if (NeedLog) Log($"Получены все {Result.Count} из {count} участников.");
             return Result;
         }
 
@@ -112,6 +126,7 @@ namespace SFFVK_lib
             var UserStatistics = new Dictionary<int, int>();
             GroupResponse UserGroup = GetUserGroups(User_id).Result;
             UserGroupCount = UserGroup.response.count; //Установим кол-во групп пользователя
+            UserGroupAnalyzed = 0; // Сбросим счётчик проанализированных групп
 
             if (NeedLog) Log($"Найдено {UserGroupCount} групп.");
 
@@ -158,10 +173,10 @@ namespace SFFVK_lib
 
         private List<UserCounter> ToNormalizeList(in Dictionary<int, int> dict)
         {
-            var list = new List<UserCounter>();
+            var list = new List<UserCounter>(); //TODO перевести на счётчик проанализированных стр, а не общих
             foreach (var i in dict)
             {
-                if (i.Value / (float)UserGroupCount <= dropout) continue; //Отбрасываем пользователей, которые имеют мало общих групп
+                if (i.Value / (float)UserGroupAnalyzed <= dropout) continue; //Отбрасываем пользователей, которые имеют мало общих групп
                 list.Add(new UserCounter(i.Key, i.Value));
             }
 
