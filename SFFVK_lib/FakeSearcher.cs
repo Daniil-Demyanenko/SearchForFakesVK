@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using System.Text.Json;
 using System.Collections.Generic;
 
+
 //https://vkhost.github.io/
 
 namespace SFFVK_lib
@@ -12,6 +13,7 @@ namespace SFFVK_lib
     {
         static readonly HttpClient client = new HttpClient();
         private string TOKEN;
+        private const float DROPOUT = 0.15f; // Исключает пользователей, у которых меньше DROPOUT (процентов) общих групп
 
         public delegate void Logger(string log);
         public Logger Log;
@@ -74,7 +76,8 @@ namespace SFFVK_lib
 
                     if (NeedLog && i % 25000 == 0) Log($"Получено {Result.Count} участников группы из {count}.");
                 }
-                catch {
+                catch
+                {
                     if (NeedLog) Log($"Ошибка получения данных пользователей группы!");
                 }
             }
@@ -89,9 +92,9 @@ namespace SFFVK_lib
         /// <returns>Объекты c id поользователя и кол-вом совпавших групп</returns>
         public List<UserCounter> InformativePredict(int User_id)
         {
-            List<UserCounter> result = new List<UserCounter>();             //TODO: перевести result в бинарное дерево
+            var UserStatistics = new Dictionary<int, int>();             //TODO: перевести result в словарь
             GroupResponse UserGroup = GetUserGroups(User_id).Result;
-            UserGroupCount = UserGroup.response.count; //Установим кол-во групп
+            UserGroupCount = UserGroup.response.count; //Установим кол-во групп пользователя
 
             if (NeedLog) Log($"Найдено {UserGroupCount} групп.");
 
@@ -104,16 +107,13 @@ namespace SFFVK_lib
                 List<int> id = GetGroupMembers(i).Result;
                 if (NeedLog) Log($"Анализ подписчиков группы id{i}");
                 foreach (var j in id)
-                    CountUser(ref result, j);
+                    CountUser(ref UserStatistics, j);
             }
 
-            if (NeedLog) Log($"Сортировка страниц по убыванию вероятности.");
-            result.Sort((a, b) =>
-            {
-                if (a.count == b.count) return 0;
-                return a.count < b.count ? 1 : -1;
-            });
-            return result;
+            if (NeedLog) Log($"Найдено {UserStatistics.Count} страниц." +
+                "\nСортировка страниц по убыванию вероятности и нормализация списка.");
+            //TODO: Сортировка словаря
+            return UserStatistics;
         }
 
         /// <summary>
@@ -132,20 +132,29 @@ namespace SFFVK_lib
             return result;
         }
 
-        //Если id есть в списке, то увеличиваем счётчик. Иначе добавляем добавляем в список
-        private void CountUser(ref List<UserCounter> list, int id)
+        //Если id есть в списке, то увеличиваем счётчик. Иначе добавляем в список
+        private void CountUser(ref Dictionary<int, int> dict, int id)
         {
-            bool finded = false;
-            list.ForEach((a) =>
+            if (dict.ContainsKey(id)) dict[id] += 1;
+            else dict.Add(id, 1);
+        }
+
+        private List<UserCounter> ToNormalizeList(in Dictionary<int, int> dict)
+        {
+            var list = new List<UserCounter>();
+            foreach (var i in dict)
             {
-                if (a.user_id == id)
-                {
-                    a.count++;
-                    finded = true;
-                }
+                if (i.Value / UserGroupCount <= DROPOUT) continue; //Отбрасываем пользователей, которые имеют мало общих групп
+                list.Add(new UserCounter(i.Key, i.Value));
+            }
+
+            list.Sort((a,b)=> {
+                if (a.count == b.count) return 0;
+                return a.count > b.count ? -1 : 1;
             });
 
-            if (!finded) list.Add(new UserCounter(id));
+            if (NeedLog) Log($"После нормализации в списке осталось {list.Count} записей");
+            return list;
         }
     }
 }

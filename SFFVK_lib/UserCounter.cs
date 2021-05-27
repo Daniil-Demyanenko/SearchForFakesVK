@@ -22,6 +22,11 @@ namespace SFFVK_lib
             user_id = id;
             count = 1;
         }
+        public UserCounter(int id, int count)
+        {
+            this.user_id = id;
+            this.count = count;
+        }
 
         public int CompareTo(object o)
         {
