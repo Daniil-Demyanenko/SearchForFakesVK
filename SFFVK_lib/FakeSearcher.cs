@@ -112,8 +112,8 @@ namespace SFFVK_lib
 
             if (NeedLog) Log($"Найдено {UserStatistics.Count} страниц." +
                 "\nСортировка страниц по убыванию вероятности и нормализация списка.");
-            //TODO: Сортировка словаря
-            return UserStatistics;
+            
+            return ToNormalizeList(UserStatistics);
         }
 
         /// <summary>

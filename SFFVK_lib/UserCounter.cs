@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SFFVK_lib
 {
-    public class UserCounter : IComparable
+    public class UserCounter
     {
         /// <summary>
         /// id пользователя ВКонтакте
@@ -26,15 +26,6 @@ namespace SFFVK_lib
         {
             this.user_id = id;
             this.count = count;
-        }
-
-        public int CompareTo(object o)
-        {
-            UserCounter a = o as UserCounter;
-            if (a != null)
-                return this.user_id.CompareTo(a.user_id);
-            else
-                throw new Exception("Невозможно сравнить два объекта");
         }
     }
 }
