@@ -34,13 +34,15 @@ namespace SearchForFakesVK
 
             Dialog.Print("Использовать \"Быстрый поиск\" (игнорирует группы, в которых больше SearchLimit участников)?\n" +
             "y/n >> ");
-            Searcher.FastSearch = Console.ReadLine().ToLower() == "y" ? true : false;
+            Searcher.FastSearch = Console.ReadLine().ToLower() == "n" ? false : true;
 
             if(Searcher.FastSearch)
             {
                 Dialog.Print("Введите максимальное количество участников группы \n(будут игнорироваться группы с кол-вом участников выше этого числа).\n"+
-                "По умолчанию SearchLimit = 500000 \n>> ");
-                Searcher.SearchLimit = int.Parse(Console.ReadLine());
+                $"По умолчанию SearchLimit = {Searcher.SearchLimit} \n>> ");
+                string input = Console.ReadLine().Trim();
+                if(input.Length > 0)
+                Searcher.SearchLimit = int.Parse(input);
             }
 
 
@@ -53,12 +55,12 @@ namespace SearchForFakesVK
             var users = Searcher.InformativePredict(User_id);
 
             Dialog.PrintLine($"Всего у пользователя {Searcher.UserGroupCount} групп.");
-            Dialog.PrintLine("Кол-во совпавшах групп и id страниц:");
+            Dialog.PrintLine($"Кол-во совпавшах групп и id страниц: {users.Count}");
 
-            for (int i = 0; i < users.Count; i++)
+            for (int i = 0; i < users.Count; i+= 10)
             {
                 for (int j = i; j < i + 10 && j < users.Count; j++)
-                    Dialog.PrintLine($"{users[j].count}\t{users[j].user_id}");
+                    Dialog.PrintLine($"{users[j].count}\tid{users[j].user_id}");
                 Log.PrintLine("Нажмите Enter, чтоб вывести ещё 10 страниц...");
                 Console.ReadLine();
             }

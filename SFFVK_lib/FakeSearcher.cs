@@ -13,7 +13,22 @@ namespace SFFVK_lib
     {
         static readonly HttpClient client = new HttpClient();
         private string TOKEN;
-        private const float DROPOUT = 0.15f; // Исключает пользователей, у которых меньше DROPOUT (процентов) общих групп
+
+        private float dropout = 0.02f;
+        /// <summary>
+        /// Исключает пользователей, у которых меньше DROPOUT (процентов) общих групп.
+        /// Dropout принадлежит [0,1].
+        /// </summary>
+        public float Dropout
+        {
+            get { return Dropout; }
+            set
+            {
+                if (value >= 0 || value <= 1) dropout = value;
+                else dropout = value < 0 ? 0 : 0.25f;
+            }
+        }
+
 
         public delegate void Logger(string log);
         public Logger Log;
@@ -22,11 +37,11 @@ namespace SFFVK_lib
         /// <summary>
         /// Ускоряет поиск, игнорируя группы, в которых больше SearchLimit пользователей
         /// </summary>
-        public bool FastSearch = false;
+        public bool FastSearch = true;
         /// <summary>
         /// При включенном FastSearch, устанавливает максимальное число участников группы
         /// </summary>
-        public int SearchLimit = 500000;
+        public int SearchLimit = 450000;
 
         /// <summary>
         /// Кол-во групп у исследуемого пользователя
@@ -78,10 +93,12 @@ namespace SFFVK_lib
                 }
                 catch
                 {
-                    if (NeedLog) Log($"Ошибка получения данных пользователей группы!");
+                    if (NeedLog) Log($"! Ошибка получения данных пользователей группы!");
+                    return Result;
                 }
             }
 
+            if(NeedLog) Log($"Получены все {Result.Count} из {count} участников.");
             return Result;
         }
 
@@ -92,7 +109,7 @@ namespace SFFVK_lib
         /// <returns>Объекты c id поользователя и кол-вом совпавших групп</returns>
         public List<UserCounter> InformativePredict(int User_id)
         {
-            var UserStatistics = new Dictionary<int, int>();             //TODO: перевести result в словарь
+            var UserStatistics = new Dictionary<int, int>();
             GroupResponse UserGroup = GetUserGroups(User_id).Result;
             UserGroupCount = UserGroup.response.count; //Установим кол-во групп пользователя
 
@@ -105,14 +122,14 @@ namespace SFFVK_lib
                 c++;
 
                 List<int> id = GetGroupMembers(i).Result;
-                if (NeedLog) Log($"Анализ подписчиков группы id{i}");
+                if (NeedLog && id.Count > 0) Log($"Анализ подписчиков группы id{i}");
                 foreach (var j in id)
                     CountUser(ref UserStatistics, j);
             }
 
             if (NeedLog) Log($"Найдено {UserStatistics.Count} страниц." +
                 "\nСортировка страниц по убыванию вероятности и нормализация списка.");
-            
+
             return ToNormalizeList(UserStatistics);
         }
 
@@ -144,11 +161,12 @@ namespace SFFVK_lib
             var list = new List<UserCounter>();
             foreach (var i in dict)
             {
-                if (i.Value / UserGroupCount <= DROPOUT) continue; //Отбрасываем пользователей, которые имеют мало общих групп
+                if (i.Value / (float)UserGroupCount <= dropout) continue; //Отбрасываем пользователей, которые имеют мало общих групп
                 list.Add(new UserCounter(i.Key, i.Value));
             }
 
-            list.Sort((a,b)=> {
+            list.Sort((a, b) =>
+            {
                 if (a.count == b.count) return 0;
                 return a.count > b.count ? -1 : 1;
             });
