@@ -101,15 +101,15 @@ namespace SFFVK_lib
                 {
                     string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.getMembers?group_id={Group_id}&offset={i}&v=5.131&access_token={TOKEN}");
                     var response = JsonSerializer.Deserialize<GroupResponse>(Json).response;
-                    if (response is not null && response.items.Length > 0)
+                    if (response.items.Length > 0)
                         Result.AddRange(response.items);
 
                     if (NeedLog && i % 25000 == 0) Log($"Получено {Result.Count} участников группы из {count}.");
                 }
                 catch
                 {
-                    if (NeedLog) Log($"! Ошибка получения данных пользователей группы!");
-                    return Result;
+                    if (NeedLog) Log($"!# Ошибка получения данных пользователей группы!");
+                    throw new Exception("Ошибка получения данных пользователей группы");
                 }
             }
 
@@ -137,13 +137,22 @@ namespace SFFVK_lib
                 if (NeedLog) Log($"Анализируется группа № {c}/{UserGroupCount}.");
                 c++;
 
-                List<int> id = GetGroupMembers(i).Result;
+                List<int> id;
+                try
+                {
+                    id = GetGroupMembers(i).Result;
+                }
+                catch { ShowVKLogErr(); break; }
+
                 if (NeedLog && id.Count > 0) Log($"Анализ подписчиков группы id{i}");
                 foreach (var j in id)
                     CountUser(ref UserStatistics, j);
+
+                
             }
 
-            if (NeedLog) Log($"Найдено {UserStatistics.Count} страниц." +
+            if (NeedLog) Log($"Найдено {UserStatistics.Count} страниц.\n"+
+                $"Проанализированно {UserGroupAnalyzed} групп." +
                 "\nСортировка страниц по убыванию вероятности и нормализация списка.");
 
             return ToNormalizeList(UserStatistics);
@@ -174,7 +183,7 @@ namespace SFFVK_lib
 
         private List<UserCounter> ToNormalizeList(in Dictionary<int, int> dict)
         {
-            var list = new List<UserCounter>(); 
+            var list = new List<UserCounter>();
             foreach (var i in dict)
             {
                 if (i.Value / (float)UserGroupAnalyzed <= dropout) continue; //Отбрасываем пользователей, которые имеют мало общих групп
@@ -189,6 +198,18 @@ namespace SFFVK_lib
 
             if (NeedLog) Log($"После нормализации в списке осталось {list.Count} записей");
             return list;
+        }
+
+        /// <summary>
+        /// Ошибка 29 от ВК. Временный запрет некоторых запросов.
+        /// </summary>
+        private void ShowVKLogErr() 
+        {
+            if (NeedLog) Log("\n#############################################\n"+
+            "Видимо, превышен лимит запросов к ВК.\n" +
+            "Данная ошибка работает как временный бан. Обычно ВК запрещает вызывать определенные методы на время от 4 до 48 часов. " +
+            "Ускорить время бана вы не сможете, а вот увеличить - сможете!\n"+
+            "Постарайтесь не пользоваться приложением 8-24 часов.");
         }
     }
 }
