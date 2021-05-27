@@ -62,7 +62,7 @@ namespace SearchForFakesVK
             {
                 for (int j = i; j < i + 10 && j < users.Count; j++)
                     Dialog.PrintLine($"{users[j].count}\tid{users[j].user_id}");
-                Log.PrintLine($"Нажмите Enter, чтоб вывести ещё 10 страниц из {users.Count - 10*i}...");
+                Log.PrintLine($"Нажмите Enter, чтоб вывести ещё 10 страниц из {users.Count - i}...");
                 Console.ReadLine();
             }
 

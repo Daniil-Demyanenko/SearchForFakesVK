@@ -14,7 +14,7 @@ namespace SFFVK_lib
         static readonly HttpClient client = new HttpClient();
         private string TOKEN;
 
-        private float dropout = 0.05f;
+        private float dropout = 0.10f;
         /// <summary>
         /// Исключает пользователей, у которых меньше DROPOUT (процентов) общих групп.
         /// Dropout принадлежит [0,1].
@@ -101,7 +101,8 @@ namespace SFFVK_lib
                 {
                     string Json = await client.GetStringAsync($"https://api.vk.com/method/groups.getMembers?group_id={Group_id}&offset={i}&v=5.131&access_token={TOKEN}");
                     var response = JsonSerializer.Deserialize<GroupResponse>(Json).response;
-                    if (response.items.Length > 0) Result.AddRange(response.items);
+                    if (response is not null && response.items.Length > 0)
+                        Result.AddRange(response.items);
 
                     if (NeedLog && i % 25000 == 0) Log($"Получено {Result.Count} участников группы из {count}.");
                 }
@@ -173,7 +174,7 @@ namespace SFFVK_lib
 
         private List<UserCounter> ToNormalizeList(in Dictionary<int, int> dict)
         {
-            var list = new List<UserCounter>(); //TODO перевести на счётчик проанализированных стр, а не общих
+            var list = new List<UserCounter>(); 
             foreach (var i in dict)
             {
                 if (i.Value / (float)UserGroupAnalyzed <= dropout) continue; //Отбрасываем пользователей, которые имеют мало общих групп
